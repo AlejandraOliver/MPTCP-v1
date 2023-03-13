@@ -30,4 +30,4 @@ reboot
 ~~~
 Al reiniciarla se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r` y como MPTCP viene activado por defecto mediante `sysctl net.mptcp.enabled`.
 
-![Captura-de-pantalla-2023-03-13-192858.png]()
+![Captura-de-pantalla-2023-03-13-192858.png](ImagenesRepositorio/Captura de pantalla 2023-03-13 192858.png)
