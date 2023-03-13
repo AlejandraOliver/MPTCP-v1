@@ -14,7 +14,7 @@ Una vez se han instalado ambas máquinas  en VirtualBox, se inician y se ponen e
 
 ### Instalación del kernel de Linux 6.1.18
 Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente). Los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
-En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 MPTCP ya viene incorporada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente del kernel pero por los mismos motivos por lo que se escogió Ubuntu 22.04, se va a escoger el kernel versión 6.1, en concreto, la versión 6.1.18 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última del kernel 6.1).
+En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente del kernel pero por los mismos motivos por lo que se escogió Ubuntu 22.04, se va a escoger el kernel versión 6.1, en concreto, la versión 6.1.18 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última del kernel 6.1).
 Para llevar esto a cabo, basta con descargar los paquetes necesarios e instalarlos. Hay muchos sitios web donde se pueden encontrar pero uno de los más sonados es [este](https://kernel.ubuntu.com/~kernel-ppa/mainline/).
 Los comandos a seguir son los siguientes:
 ~~~
@@ -28,6 +28,6 @@ Una vez descargados los paquetes, se deben instalar y reiniciar la máquina para
 sudo dpkg -i *.deb
 reboot
 ~~~
-Al reiniciarla se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r` y como MPTCP viene activado por defecto mediante `sysctl net.mptcp.enabled`.
+Al reiniciarla se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r` y como MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello, mediante `sysctl net.mptcp.enabled`.
 
 ![Captura-de-pantalla-2023-03-13-192858.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-13%20192858.png)
