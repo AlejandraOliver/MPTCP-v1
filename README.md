@@ -86,3 +86,43 @@ systemctl daemon-reload
 systemctl start mptcp.service
 ~~~
 ![Captura-de-pantalla-2023-03-15-20122503.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-15%20122503.png)
+
+### Configuración de Routing
+Lo siguiente que se debe hacer es configurar el routing entre ambas máquinas. Lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de ambas máquinas (para esta prueba se van a establecer todas en la misma red con IP 10.1.1.0/24). Así, se accede al archivo ***/etc/netplan/01-network.manager-all.yaml* **y se configura la IP de cada interfaz:
+- Para la máquina Ue1: enp0s8 (10.1.1.1), enp0s9 (10.1.1.2) y enp0s10 (10.1.1.3).
+- Para la máquina Ue2: enp0s8 (10.1.1.4), enp0s9 (10.1.1.5) y enp0s10 (10.1.1.6).
+
+Después de debe ejecutar `$ sudo netplan apply` para que los cambios se guarden.
+
+#####Ue1
+A continuación, se deben crear 3 tablas de enrutamiento; para ello se accede al fichero ****/etc/iproute2/rt_tables*** y se añaden 3 tablas con ID 100, 200 y 300 y nombres table1,table2 y table3 sucesivamente. Una vez creadas, se añaden las IP de origen correspondientes:
+~~~
+ip rule add from 10.1.1.1 table table1
+ip rule add from 10.1.1.2 table table2
+ip rule add from 10.1.1.3 table table3
+~~~
+Lo siguiente que se debe hacer es configurar dichas tablas. Para ello, se ejecutan:
+~~~
+ip route add 10.1.1.0/24 dev enp0s8 scope link table table1
+ip route add default via 10.1.1.4 dev enp0s8 table table1
+ip route add 10.1.1.0/24 dev enp0s9 scope link table table2
+ip route add default via 10.1.1.4 dev enp0s9 table table2
+ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
+ip route add default via 10.1.1.4 dev enp0s10 table table3
+  ~~~
+  
+  #####Ue2
+Se crean 3 tablas igual que en Ue1 y se añaden las IP de origen correspondientes:
+~~~
+ip rule add from 10.1.1.4 table table1
+ip rule add from 10.1.1.5 table table2
+ip rule add from 10.1.1.6 table table3
+~~~
+Lo siguiente que se debe hacer es configurar dichas tablas. Para ello, se ejecutan:
+~~~
+ip route add 10.1.1.0/24 dev enp0s8 scope link table table1
+ip route add default via 10.1.1.1 dev enp0s8 table table1
+ip route add 10.1.1.0/24 dev enp0s9 scope link table table2
+ip route add default via 10.1.1.1 dev enp0s9 table table2
+ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
+ip route add default via 10.1.1.1 dev enp0s10 table table3
