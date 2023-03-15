@@ -13,8 +13,9 @@ Para crear el escenario se ha utilizado la herramienta *Oracle VM VirtualBox*, u
 Una vez se han instalado ambas máquinas  en VirtualBox, se inician y se ponen en marcha siguiendo los pasos de instalación de Ubuntu que van apareciendo en pantalla.
 
 ### Instalación del kernel de Linux 6.1.18
-Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente). Los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
-En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente del kernel pero por los mismos motivos por lo que se escogió Ubuntu 22.04, se va a escoger el kernel versión 6.1, en concreto, la versión 6.1.18 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última del kernel 6.1).
+Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente), los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
+
+En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 de MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente del kernel pero por los mismos motivos por los que se escogió Ubuntu 22.04 LTS, se va a escoger el kernel versión 6.1, en concreto, la versión 6.1.18 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última del kernel 6.1).
 Para llevar esto a cabo, basta con descargar los paquetes necesarios e instalarlos. Hay muchos sitios web donde se pueden encontrar pero uno de los más sonados es [este](https://kernel.ubuntu.com/~kernel-ppa/mainline/).
 Los comandos a seguir son los siguientes:
 ~~~
@@ -48,7 +49,7 @@ Antes de poder instalarlo es necesario instalar en nuestra/s máquinas una serie
 - [Pandoc >= 2.2.1](https://pandoc.org/installing.html)
 - [Doxygen](https://www.doxygen.nl/download.html)
 
-Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `$ sudo apt install <nombre de la dependencia`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
+Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `$ sudo apt install <nombre de la dependencia>`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
 
 - Biblioteca Argp. Para instalar esta biblioteca se han seguido los pasos que ofrece [*Alexander Reguiero*](https://github.com/alexreg/libargp) en su plataforma de github pero reemplazando algunos archivos por los que ofrece [*Érico Nogueira Rolim*](https://github.com/ericonr/argp-standalone) en su repositorio. Esto se ha hecho así ya que éste segundo ofrece soluciones a los problemas de compilación de los archivos del primer repositorio.
 
@@ -69,7 +70,7 @@ sudo make install
 - Encabezados de API de usuario de MPTCP del kernel   de Linux.
 
 #### Instalación de mptcpd
-Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así se ejecuta `$ ./bootstrap`.
+Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así, se ejecuta `$ ./bootstrap`.
 
 mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Una de las opciones es `$ configure --with-kernel=upstream`.
 
@@ -168,7 +169,7 @@ ip mptcp limits set subflow 1 add_addr_accepted 3
 De esta forma, ambas máquinas estarían configuradas para transmitir y recibir datos por todas sus interfaces.
 
 ### Sockets
-Lo último que se debe hacer es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio mptcpd. En este caso, se usa mptcpize y las herramientas iperf3 e ifstat. Ambas se puede instalar ejecutando:
+Lo último que se debe hacer es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio mptcpd. En este caso, se usa mptcpize y las herramientas iperf3 e ifstat. Ambas se pueden instalar ejecutando:
 ~~~
 sudo apt install iperf3
 sudo apt install ifstat
@@ -180,3 +181,5 @@ Para realizar las pruebas se instala en las máquinas (no importa si en Ue1 o Ue
 - mptcpize run iperf3 -s & ifstat 
 - mptcpize run iperf3 -c 10.1.1.1 & ifstat 
 ~~~
+
+### Comentarios
