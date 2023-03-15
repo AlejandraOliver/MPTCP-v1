@@ -31,3 +31,63 @@ reboot
 Al reiniciarla se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r` y como MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello, mediante `sysctl net.mptcp.enabled`.
 
 ![Captura-de-pantalla-2023-03-13-192858.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-13%20192858.png)
+
+### Instalación del Demonio mptcpd y sus Dependencias
+
+#### Dependencias necesarias
+Aunque en los upstream kernels MPTCP esté soportado por defecto, es necesario instalar el demonio mptcpd para su correcto funcionamiento. Este demonio realiza operaciones relacionadas con la gestión de rutas MPTCP en el espacio del usuario; además, interactúa con el kernel de Linux a través de una conexión netlink genérica para rastrear información por conexión (direcciones remotas disponibles, interfaces de red disponibles, solicitud de nuevos subflujos MPTCP, manejo de solicitudes de subflujos, etc).
+El paquete se puede descargar del propio [repositorio de Ubuntu oficial](https://packages.ubuntu.com/jammy/mptcpd)  en su versión 0.9 o clonando el [repositorio de github](https://github.com/multipath-tcp/mptcpd) de *ossama-othman* cuya versión es la 0.12 (al instalarlo aparece el demonio como versión 0.9 y la herramienta mptcpize como 0.12). En ambos casos se pueden descargar dos librerías adicionales si se quiere estar seguro de que todas las funcionalidades de mptcpd están instaladas, estas dos librerías son [*libmptcpwrap0*](https://packages.ubuntu.com/jammy/amd64/libmptcpwrap0) (Multipath TCP Converter Library) y[ *libmptcpd3*](https://packages.ubuntu.com/jammy/libmptcpd3) (Multipath TCP Daemon Library). Para este caso, se ha descargado el demonio desde github y ambas librerías de los repositorios de Ubuntu.
+
+Antes de poder instalarlo es necesario instalar en nuestra/s máquinas una serie de dependencias de compilación:
+- [C compiler (compatible con C99)](https://0and6.wordpress.com/2017/06/04/instalar-compilador-de-c-en-ubuntu/)
+- [pkg-config](https://www.freedesktop.org/wiki/Software/pkg-config/)
+- [GNU Autoconf](https://www.gnu.org/software/autoconf/)
+- [GNU Automake](https://www.gnu.org/software/automake/)
+- [GNU Libtool](https://www.gnu.org/software/libtool/)
+- [GNU Autoconf-archive](https://www.gnu.org/software/autoconf-archive/)
+- [Pandoc >= 2.2.1](https://pandoc.org/installing.html)
+- [Doxygen](https://www.doxygen.nl/download.html)
+
+Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `$ sudo apt install <nombre de la dependencia`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
+
+- Biblioteca Argp. Para instalar esta biblioteca se han seguido los pasos que ofrece [*Alexander Reguiero*](https://github.com/alexreg/libargp) en su plataforma de github pero reemplazando algunos archivos por los que ofrece [*Érico Nogueira Rolim*](https://github.com/ericonr/argp-standalone) en su repositorio. Esto se ha hecho así ya que éste segundo ofrece soluciones a los problemas de compilación de los archivos del primer repositorio.
+
+- [Biblioteca de Linux integrada >= v0.30](https://git.kernel.org/pub/scm/libs/ell/ell.git/). Este paquete se puede instalar con los siguiente comandos:
+~~~
+git clone https://git.kernel.org/pub/scm/libs/ell/ell.git
+cd ell
+autoreconf -i
+mkdir build
+cd build
+../configure
+make
+make check
+sudo make install
+~~~
+` $ autoreconf -i` se emplea para generar los archivos de configuración necesarios como el archivo *configure*. ` $ ../configure` se emplea para configurar la librería y `$ make` para construirla. Finalmente. se puede ejecutar `$ make check` para ejecutar la carpeta de tests y comprobar que la libería funciona correctamente y `$ sudo make install` para terminar de instalarla junto con todos los archivos de cabecera que faltan.
+
+- Encabezados de API de usuario de MPTCP del kernel   de Linux.
+
+#### Instalación de mptcpd
+Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así se ejecuta `$ ./bootstrap`.
+
+mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Se observa como una de las opciones es `$ configure --with-path-manager`, para poder observar rápido el funcionamiento de MPTCP se va a poner el path-manager como fullmesh, pero esta opción hay que añadirla en dos ficheros (*configure* y *mptcpd.conf*):
+	- En el fichero ___configure___: en el apartado *Optional Packages*  añadir un nuevo PLUGIN llamado fullmesh, en la línea 21442  añadir también la opción fullmesh y en la línea 22180 añadir como primera opción fullmesh y como path-manager por defecto addr_adv.
+	En el fichero ___mptcpd.conf___: en el apartado *Path-manager Plugins* establecer el path-manager a fullmesh y al final del fichero en *Plugins to Load* añadir también la opción para que ésta pueda cargarse.
+
+Además se debe añadir la opción MPTCP_ATTR_SERVER_SIDE en el fichero /usr/include/linux/mptcp.h ya que sino, al ejecutar el script *configure* da un warning de que no encuentra la opción y no puede ejecutar mptcp upstream, volviendo a fallback.
+
+Con todo esto, se ejecuta:
+~~~
+./configure --with-path-manager=fullmesh
+sudo make
+sudo make check
+sudo make install
+~~~
+Para comenzar mptcpd inmediatamente después de la instalación, basta con ejecutar los siguientes comandos:
+~~~
+systemctl daemon-reload
+systemctl start mptcp.service
+~~~
+![Captura-de-pantalla-2023-03-13-192858.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-13%20192858.png)
+
