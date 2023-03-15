@@ -73,8 +73,6 @@ Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado 
 
 mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Se observa como una de las opciones es `$ configure --with-path-manager`.
 
-Además se debe añadir la opción MPTCP_ATTR_SERVER_SIDE en el fichero /usr/include/linux/mptcp.h ya que sino, al ejecutar el script *configure* da un warning de que no encuentra la opción y no puede ejecutar mptcp upstream, volviendo a fallback.
-
 Con todo esto, se ejecuta:
 ~~~
 ./configure
