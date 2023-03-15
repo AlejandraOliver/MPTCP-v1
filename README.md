@@ -71,11 +71,11 @@ sudo make install
 #### Instalación de mptcpd
 Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así se ejecuta `$ ./bootstrap`.
 
-mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Se observa como una de las opciones es `$ configure --with-path-manager`.
+mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Una de las opciones es `$ configure --with-kernel=upstream`.
 
 Con todo esto, se ejecuta:
 ~~~
-./configure
+./configure --with-kernel=upstream
 sudo make
 sudo make check
 sudo make install
