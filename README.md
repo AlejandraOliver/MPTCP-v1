@@ -88,14 +88,14 @@ systemctl start mptcp.service
 ![Captura-de-pantalla-2023-03-15-20122503.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-15%20122503.png)
 
 ### Configuración de Routing
-Lo siguiente que se debe hacer es configurar el routing entre ambas máquinas. Lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de ambas máquinas (para esta prueba se van a establecer todas en la misma red con IP 10.1.1.0/24). Así, se accede al archivo ***/etc/netplan/01-network.manager-all.yaml* **y se configura la IP de cada interfaz:
+Lo siguiente que se debe hacer es configurar el routing entre ambas máquinas. Lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de ambas máquinas (para esta prueba se van a establecer todas en la misma red con IP 10.1.1.0/24). Así, se accede al archivo ***/etc/netplan/01-network.manager-all.yaml*** y se configura la IP de cada interfaz:
 - Para la máquina Ue1: enp0s8 (10.1.1.1), enp0s9 (10.1.1.2) y enp0s10 (10.1.1.3).
 - Para la máquina Ue2: enp0s8 (10.1.1.4), enp0s9 (10.1.1.5) y enp0s10 (10.1.1.6).
 
 Después de debe ejecutar `$ sudo netplan apply` para que los cambios se guarden.
 
-#####Ue1
-A continuación, se deben crear 3 tablas de enrutamiento; para ello se accede al fichero ****/etc/iproute2/rt_tables*** y se añaden 3 tablas con ID 100, 200 y 300 y nombres table1,table2 y table3 sucesivamente. Una vez creadas, se añaden las IP de origen correspondientes:
+##### Ue1
+A continuación, se deben crear 3 tablas de enrutamiento; para ello se accede al fichero ***/etc/iproute2/rt_tables*** y se añaden 3 tablas con ID 100, 200 y 300 y nombres table1,table2 y table3 sucesivamente. Una vez creadas, se añaden las IP de origen correspondientes:
 ~~~
 ip rule add from 10.1.1.1 table table1
 ip rule add from 10.1.1.2 table table2
@@ -111,7 +111,7 @@ ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
 ip route add default via 10.1.1.4 dev enp0s10 table table3
   ~~~
   
-  #####Ue2
+  ##### Ue2
 Se crean 3 tablas igual que en Ue1 y se añaden las IP de origen correspondientes:
 ~~~
 ip rule add from 10.1.1.4 table table1
@@ -126,3 +126,57 @@ ip route add 10.1.1.0/24 dev enp0s9 scope link table table2
 ip route add default via 10.1.1.1 dev enp0s9 table table2
 ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
 ip route add default via 10.1.1.1 dev enp0s10 table table3
+~~~
+
+Con esto, el routing de ambas máquinas está configurado. Para comprobarlo se pueden ejecutar los comandos `$ip rule show`, `$ip route` o  `$ip route show table ID`.
+
+### Configuración de Path-manager
+El path-manager se configura usando la herramienta `ip mptcp`.En concreto, se emplean dos comandos:
+- ip mptcp limits set subflow NR add_addr_accepted NR.
+- ip mptcp endpoint add  'ip'  dev 'iface' 'subflow|signal'.
+
+El primero se utiliza para establecer el número de direcciones IP que se van a admitir por subflujo y el segundo para establecer las direcciones IP de las interfaces que van a funcionar para subflujos.
+
+La máquina Ue1 se va a utilizar como servidor y la Ue2 como cliente.
+
+##### Ue1
+- Se agrega un punto final MPTCP para cada dirección IP en las tres interfaces de red:
+~~~
+ip mptcp endpoint add 10.1.1.1 dev enp0s8 subflow
+ip mptcp endpoint add 10.1.1.2 dev enp0s9 subflow
+ip mptcp endpoint add 10.1.1.3 dev enp0s10 subflow
+~~~
+
+- Se establece un límite de 3 direcciones IP adicionales para cada subflujo MPTCP:
+~~~
+ip mptcp limits set subflow 1 add_addr_accepted 3
+~~~
+
+##### Ue2
+- Se agrega un punto final MPTCP para cada dirección IP en las tres interfaces de red:
+~~~
+ip mptcp endpoint add 10.1.1.4 dev enp0s8 subflow
+ip mptcp endpoint add 10.1.1.5 dev enp0s9 subflow
+ip mptcp endpoint add 10.1.1.6 dev enp0s10 subflow
+~~~
+
+- Se establece un límite de 3 direcciones IP adicionales para cada subflujo MPTCP:
+~~~
+ip mptcp limits set subflow 1 add_addr_accepted 3
+~~~
+
+De esta forma, ambas máquinas estarían configuradas para transmitir y recibir datos por todas sus interfaces.
+
+### Sockets
+Lo último que se debe hacer es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio mptcpd. En este caso, se usa mptcpize y las herramientas iperf3 e ifstat. Ambas se puede instalar ejecutando:
+~~~
+sudo apt install iperf3
+sudo apt install ifstat
+~~~
+
+### Pruebas
+Para realizar las pruebas se instala en las máquinas (no importa si en Ue1 o Ue2) Wireshark y se pone a capturar. Seguidamente se ejecuta:
+~~~
+- mptcpize run iperf3 -s & ifstat 
+- mptcpize run iperf3 -c 10.1.1.1 & ifstat 
+~~~
