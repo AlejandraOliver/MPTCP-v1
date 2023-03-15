@@ -89,5 +89,4 @@ Para comenzar mptcpd inmediatamente después de la instalación, basta con ejecu
 systemctl daemon-reload
 systemctl start mptcp.service
 ~~~
-![Captura-de-pantalla-2023-03-13-192858.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-13%20192858.png)
-
+![Captura-de-pantalla-2023-03-15-20122503.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-15%20122503.png)
