@@ -67,7 +67,8 @@ sudo make install
 ~~~
 ` $ autoreconf -i` se emplea para generar los archivos de configuración necesarios como el archivo *configure*. ` $ ../configure` se emplea para configurar la librería y `$ make` para construirla. Finalmente. se puede ejecutar `$ make check` para ejecutar la carpeta de tests y comprobar que la libería funciona correctamente y `$ sudo make install` para terminar de instalarla junto con todos los archivos de cabecera que faltan.
 
-- Encabezados de API de usuario de MPTCP del kernel   de Linux.
+- Encabezados de API de usuario de MPTCP del kernel   de Linux: la biblioteca que contiene los encabezados de API de usuario de MPTCP es la "libmnl-dev" (Netlink Library). Es una biblioteca C que proporciona una interfaz de programación de aplicaciones (API) para la creación y el manejo de mensajes de netlink en el espacio de usuario de Linux, incluye las funciones necesarias para interactuar con el módulo de kernel MPTCP y crear y enviar mensajes de netlink para configurar y controlar la conexión MPTCP. Los encabezados de API de usuario de MPTCP se encuentran en el archivo "mnl/mptcp.h" dentro de la biblioteca libmnl.
+
 
 #### Instalación de mptcpd
 Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así, se ejecuta `$ ./bootstrap`.
