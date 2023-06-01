@@ -13,16 +13,16 @@ Para crear el escenario se ha utilizado la herramienta *Oracle VM VirtualBox*, u
 Una vez se han instalado ambas máquinas  en VirtualBox, se inician y se ponen en marcha siguiendo los pasos de instalación de Ubuntu que van apareciendo en pantalla.
 
 ### Instalación del kernel de Linux 6.1.18
-Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente), los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
+Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 LTS funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente), los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
 
-En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 de MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente del kernel pero por los mismos motivos por los que se escogió Ubuntu 22.04 LTS, se va a escoger el kernel versión 6.1, en concreto, la versión 6.1.18 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última del kernel 6.1).
+En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 de MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente que hay actualmente del kernel, por lo tanto se va a escoger  el kernel versión 6.3, en concreto, la versión 6.3-rc4 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última).
 Para llevar esto a cabo, basta con descargar los paquetes necesarios e instalarlos. Hay muchos sitios web donde se pueden encontrar pero uno de los más sonados es [este](https://kernel.ubuntu.com/~kernel-ppa/mainline/).
 Los comandos a seguir son los siguientes:
 ~~~
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.1.18/amd64/linux-headers-6.1.18-060118-generic_6.1.18-060118.202303111330_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.1.18/amd64/linux-headers-6.1.18-060118_6.1.18-060118.202303111330_all.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.1.18/amd64/linux-image-unsigned-6.1.18-060118-generic_6.1.18-060118.202303111330_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.1.18/amd64/linux-modules-6.1.18-060118-generic_6.1.18-060118.202303111330_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc4/amd64/linux-headers-6.3.0-060300rc4-generic_6.3.0-060300rc4.202303262231_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc4/amd64/linux-headers-6.3.0-060300rc4_6.3.0-060300rc4.202303262231_all.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc4/amd64/linux-image-unsigned-6.3.0-060300rc4-generic_6.3.0-060300rc4.202303262231_amd64.deb
+wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc4/amd64/linux-modules-6.3.0-060300rc4-generic_6.3.0-060300rc4.202303262231_amd64.deb
 ~~~
 Una vez descargados los paquetes, se deben instalar y reiniciar la máquina para que los cambios se guarden:
 ~~~
