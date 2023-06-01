@@ -1,6 +1,6 @@
 # MPTCP v1
 
-En este repositorio se muestran los pasos a seguir para la elaboración de un escenario simple con dos máquinas virtuales conectadas entre sí entre las que se ejecuta MPTCP v1. Para realizar esto, se utiliza el código y se siguen los pasos del repositorio oficial del demonio MPTCP [software](https://www.virtualbox.org/wiki/Downloads](https://github.com/multipath-tcp/mptcpd). 
+En este repositorio se muestran los pasos a seguir para la elaboración de un escenario simple con dos máquinas virtuales conectadas entre sí entre las que se ejecuta MPTCP v1. Para realizar esto, se utiliza el código y se siguen los pasos del repositorio oficial del demonio MPTCP [software](https://github.com/multipath-tcp/mptcpd). 
 ### Instalación de las máquinas virtuales
 Para crear el escenario se ha utilizado la herramienta *Oracle VM VirtualBox*, un software de virtualización para arquitecturas x86/amd64. Es recomendable utilizar la última versión que haya en el momento y que no muestre problemas ya que ofrece mayor compatibilidad con máquinas con kernels nuevos. Los pasos a seguir son:
 - Ir a la página oficial de Oracle y descargar la versión correspondiente del [software](https://www.virtualbox.org/wiki/Downloads).
