@@ -48,14 +48,14 @@ Lo siguiente que se debe hacer es configurar el routing en ambas máquinas.La es
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20202932.png" width="500" />
 </p>
 
-Como se observa, cada máquina tiene 3 interfaces conectadas a una misma red interna *ue_ue_v1_2* a través de las cuales se implementará MPTCP, además de una cuarta interfaz a NAT a la que se le asigna IP mediante DHCP, por lo que de ésta última no hay que preocuparse. Pues bien, lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de la red interna, para ello se accede al archivo ***/etc/netplan/01-network.manager-all.yaml*** y se configura:
+Como se observa, cada máquina tiene 3 interfaces conectadas a una misma red interna *ue_ue_v1_2* a través de las cuales se implementará MPTCP, además de una cuarta interfaz a NAT a la que se le asigna IP mediante DHCP, por lo que de ésta última no hay que preocuparse. Pues bien, lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de la red interna, para ello se accede al archivo */etc/netplan/01-network.manager-all.yaml* y se configura:
 
 - Para la máquina *Client_kernelOficial*: enp0s8 (10.1.1.1), enp0s9 (10.1.1.2) y enp0s10 (10.1.1.3).
 - Para la máquina *Server_kernelOficial*: enp0s8 (10.1.1.4), enp0s9 (10.1.1.5) y enp0s10 (10.1.1.6).
 
 Después de debe ejecutar `$ sudo netplan apply` para que los cambios se guarden.
 
-##### *Client_kernelOficial*
+#### *Client_kernelOficial*
 A continuación, se deben crear 3 tablas de enrutamiento basadas en la Ip de origen:
 ~~~
 sudo ip rule add from 10.1.1.1 table 10
@@ -80,7 +80,7 @@ sudo ip route del 169.254.0.0/16
 ~~~
 El primero de ellos establece la ruta por defecto para el proceso de selección del tráfico normal de Internet, y el segundo elimina un enlace local que se crea por defecto y que no es necesario, lo único que hace es entorpecer el *routing* creado.
 
-##### *Server_kernelOficial*
+#### *Server_kernelOficial*
 Siguiendo los mismo pasos que para el cliente, pero con sus IP correspondientes, se lleva a cabo lo siguiente:
 Se crean las tablas:
 ~~~
