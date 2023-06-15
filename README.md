@@ -56,7 +56,7 @@ Como se observa, cada máquina tiene 3 interfaces conectadas a una misma red int
 Después de debe ejecutar `$ sudo netplan apply` para que los cambios se guarden.
 
 #### *Client_kernelOficial*
-A continuación, se deben crear 3 tablas de enrutamiento basadas en la Ip de origen:
+A continuación, se deben crear 3 tablas de enrutamiento basadas en la IP de origen:
 ~~~
 sudo ip rule add from 10.1.1.1 table 10
 sudo ip rule add from 10.1.1.2 table 20
@@ -111,7 +111,16 @@ Con todo ello se puede comprobar que el *routing* se ha establecido de forma cor
 :-------------------------:|:-------------------------:
 ![1](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205158.png)  |  ![2](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205332.png)
 
-#### Dependencias necesarias
+
+### Configuración del *scheduling* en las máquinas
+
+### Configuración del *path management* en las máquinas
+
+### Pruebas de funcionamiento
+
+
+
+
 Aunque en los upstream kernels MPTCP esté soportado por defecto, es necesario instalar el demonio mptcpd para su correcto funcionamiento. Este demonio realiza operaciones relacionadas con la gestión de rutas MPTCP en el espacio del usuario; además, interactúa con el kernel de Linux a través de una conexión netlink genérica para rastrear información por conexión (direcciones remotas disponibles, interfaces de red disponibles, solicitud de nuevos subflujos MPTCP, manejo de solicitudes de subflujos, etc).
 El paquete se puede descargar del propio [repositorio de Ubuntu oficial](https://packages.ubuntu.com/jammy/mptcpd)  en su versión 0.9 o clonando el [repositorio de github](https://github.com/multipath-tcp/mptcpd) de *ossama-othman* cuya versión es la 0.12 (al instalarlo aparece el demonio como versión 0.9 y la herramienta mptcpize como 0.12). En ambos casos se pueden descargar dos librerías adicionales si se quiere estar seguro de que todas las funcionalidades de mptcpd están instaladas, estas dos librerías son [*libmptcpwrap0*](https://packages.ubuntu.com/jammy/amd64/libmptcpwrap0) (Multipath TCP Converter Library) y[ *libmptcpd3*](https://packages.ubuntu.com/jammy/libmptcpd3) (Multipath TCP Daemon Library). Para este caso, se ha descargado el demonio desde github y ambas librerías de los repositorios de Ubuntu.
 
