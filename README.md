@@ -16,7 +16,7 @@ Una vez se han instalado ambas máquinas  en VirtualBox, se inician y se ponen e
 ###  Instalación de las dependencias necesarias para poder compilar el *kernel*
 Antes de intentar compilar e instalar el *kernel* que se quiera en cada una de las máquinas, es necesario instalar una serie de herramientas, las cuales permitirán la posterior compilación del *kernel* sin errores. Estas dependencias se pueden ver en la [*wiki* de *Ubuntu*](https://wiki.ubuntu.com/KernelTeam/GitKernelBuild).
 
-### Instalación del *kernel* de Linux 6.4-rc5
+###  Instalación del *kernel* de Linux 6.4-rc5
 Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 LTS funcionando, y con las dependencias necesarias instaladas. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la  web [MultiPath TCP - Linux Kernel implementation](https://multipath-tcp.org/) (esta *wiki* se encarga de la implementación de MPTCP v0 en el *kernel* de Linux), se observa como los *kernels* que ofrecen soporte por defecto a la versión 1 de MPTCP son aquellos que empiezan en la versión v5.6.
 
 El *kernel* más moderno que actualmente ofrece soporte a MPTCP v1 es el 6.4-rc5, por lo que el escenario se va a montar sobre máquinas que lo incluyen (cuando el usuario este leyendo esto, habrán salido *kernels* más nuevos, pero los pasos a seguir que se describen en este repositorio siguen siendo válidos).
@@ -113,16 +113,26 @@ Con todo ello se puede comprobar que el *routing* se ha establecido de forma cor
 
 
 ### Configuración del *scheduling* en las máquinas
+Los *kernels* oficiales de Linux a partir de v5.6 ofrecen soporte al protocolo, pero no todas las funcionalidades de éste. A diferencia de MPTCP v0, el cual poseía varios tipos de *schedulers*, el protocolo en su versión 1 implementado en estos *kernels* solo posee un tipo de *scheduler*, el *scheduler* por defecto. Éste envía los datos por todos los subflujos disponibles, buscando el mejor rendimiento. Por todo ello, no hay nada que configurar en este ámbito.
 
 ### Configuración del *path management* en las máquinas
+A la hora de implementar la gestión de rutas, se tienen dos tipos de *path manager*:
+- *In-kernel path manager*: este gestor de rutas se implementa en el propio kernel. Para configurarlo se hace uso del comando `ip mptcp' (incluido en iproute2-ss200602), estableciendo así cómo se van a intentar crear los subflujos, qué direcciones van a ser anunciadas, etc.
+- *User-space path manager*: este gestor de rutas se implementa en el espacio de usuario a través del demonio *mptcpd*. Éste interactua con el *kernel* de Linux haciendo uso de una conexión *netlink* genérica, siendo así capaz de solicitar nuevos subflujos, gestionar las solicitudes por parte de los otros extremos, etc.
 
-### Pruebas de funcionamiento
+La principal tarea que va a tener que llevar cualquiera de los *path managers* mencionados, es establecer de qué tipo van a ser las interfaces de cada máquina. Éstas se van a poder configurar como *endpoints* de 4 tipos:
+- Subflow: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos.
+- Signal: la interfaz configurada así permite que su IP sea anunciada mediante mensajes ADD_ADDR. Ella nunca inicia un subflujo (no manda mensajes MP_JOIN).
+- Fullmesh: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos a cada una de las demás interfaces de la otra máquina, formando una toplogía de subflujos todo-a-todo. 
+- Backup: esta opción indica que los subflujos creados utilizándola, serán con mensajes MP_JOIN con el flag backup a 1, por lo que no se utilizarán hasta que sea necesario.
 
+A continuación se describen los dos tipos de gestor de rutas.
 
+#### Configuración del *path management* a través de *mptcpd*
 
+**1. Instalación de dependencias y descarga del paquete *mptcpd***
 
-Aunque en los upstream kernels MPTCP esté soportado por defecto, es necesario instalar el demonio mptcpd para su correcto funcionamiento. Este demonio realiza operaciones relacionadas con la gestión de rutas MPTCP en el espacio del usuario; además, interactúa con el kernel de Linux a través de una conexión netlink genérica para rastrear información por conexión (direcciones remotas disponibles, interfaces de red disponibles, solicitud de nuevos subflujos MPTCP, manejo de solicitudes de subflujos, etc).
-El paquete se puede descargar del propio [repositorio de Ubuntu oficial](https://packages.ubuntu.com/jammy/mptcpd)  en su versión 0.9 o clonando el [repositorio de github](https://github.com/multipath-tcp/mptcpd) de *ossama-othman* cuya versión es la 0.12 (al instalarlo aparece el demonio como versión 0.9 y la herramienta mptcpize como 0.12). En ambos casos se pueden descargar dos librerías adicionales si se quiere estar seguro de que todas las funcionalidades de mptcpd están instaladas, estas dos librerías son [*libmptcpwrap0*](https://packages.ubuntu.com/jammy/amd64/libmptcpwrap0) (Multipath TCP Converter Library) y[ *libmptcpd3*](https://packages.ubuntu.com/jammy/libmptcpd3) (Multipath TCP Daemon Library). Para este caso, se ha descargado el demonio desde github y ambas librerías de los repositorios de Ubuntu.
+Lo primero es descargar el paquete que contiene el demonio dentro de cada una de las máquinas. Éste se puede descargar del propio [repositorio de Ubuntu oficial](https://packages.ubuntu.com/jammy/mptcpd)  o clonando el [repositorio de github](https://github.com/multipath-tcp/mptcpd) de *ossama-othman*. En ambos casos se pueden descargar dos librerías adicionales si se quiere estar seguro de que todas las funcionalidades de mptcpd están instaladas, estas dos librerías son [*libmptcpwrap0*](https://packages.ubuntu.com/jammy/amd64/libmptcpwrap0) (Multipath TCP Converter Library) y[ *libmptcpd3*](https://packages.ubuntu.com/jammy/libmptcpd3) (Multipath TCP Daemon Library). En este caso, se ha descargado el demonio desde GitHub y ambas librerías de los repositorios de Ubuntu.
 
 Antes de poder instalarlo es necesario instalar en nuestra/s máquinas una serie de dependencias de compilación:
 - [C compiler (compatible con C99)](https://0and6.wordpress.com/2017/06/04/instalar-compilador-de-c-en-ubuntu/)
@@ -134,138 +144,199 @@ Antes de poder instalarlo es necesario instalar en nuestra/s máquinas una serie
 - [Pandoc >= 2.2.1](https://pandoc.org/installing.html)
 - [Doxygen](https://www.doxygen.nl/download.html)
 
-Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `$ sudo apt install <nombre de la dependencia>`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
+Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `sudo apt install <nombre de la dependencia>`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
 
 - Biblioteca Argp. Para instalar esta biblioteca se han seguido los pasos que ofrece [*Alexander Reguiero*](https://github.com/alexreg/libargp) en su plataforma de github pero reemplazando algunos archivos por los que ofrece [*Érico Nogueira Rolim*](https://github.com/ericonr/argp-standalone) en su repositorio. Esto se ha hecho así ya que éste segundo ofrece soluciones a los problemas de compilación de los archivos del primer repositorio.
 
 - [Biblioteca de Linux integrada >= v0.30](https://git.kernel.org/pub/scm/libs/ell/ell.git/). Este paquete se puede instalar con los siguiente comandos:
 ~~~
-git clone https://git.kernel.org/pub/scm/libs/ell/ell.git
+sudo git clone https://git.kernel.org/pub/scm/libs/ell/ell.git
 cd ell
-autoreconf -i
-mkdir build
+sudo autoreconf -i
+sudo mkdir build
 cd build
-../configure
-make
-make check
-sudo make install
-~~~
-` $ autoreconf -i` se emplea para generar los archivos de configuración necesarios como el archivo *configure*. ` $ ../configure` se emplea para configurar la librería y `$ make` para construirla. Finalmente. se puede ejecutar `$ make check` para ejecutar la carpeta de tests y comprobar que la libería funciona correctamente y `$ sudo make install` para terminar de instalarla junto con todos los archivos de cabecera que faltan.
-
-- Encabezados de API de usuario de MPTCP del kernel   de Linux: la biblioteca que contiene los encabezados de API de usuario de MPTCP es la "libmnl-dev" (Netlink Library). Es una biblioteca C que proporciona una interfaz de programación de aplicaciones (API) para la creación y el manejo de mensajes de netlink en el espacio de usuario de Linux, incluye las funciones necesarias para interactuar con el módulo de kernel MPTCP y crear y enviar mensajes de netlink para configurar y controlar la conexión MPTCP. Los encabezados de API de usuario de MPTCP se encuentran en el archivo "mnl/mptcp.h" dentro de la biblioteca libmnl.
-
-
-#### Instalación de mptcpd
-Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado  el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así, se ejecuta `$ ./bootstrap`.
-
-mptcpd sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para Autotool, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y ejecutar `$ make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `$ configure --help`. Una de las opciones es `$ configure --with-kernel=upstream`.
-
-Con todo esto, se ejecuta:
-~~~
-./configure --with-kernel=upstream
+sudo ../configure
 sudo make
 sudo make check
 sudo make install
 ~~~
-Para comenzar mptcpd inmediatamente después de la instalación, basta con ejecutar los siguientes comandos:
+` $ autoreconf -i` se emplea para generar los archivos de configuración necesarios como el archivo *configure*. ` $ ../configure` se emplea para configurar la librería y `$ make` para construirla. Finalmente. se puede ejecutar `$ make check` para ejecutar la carpeta de tests y comprobar que la libería funciona correctamente y `$ sudo make install` para terminar de instalarla junto con todos los archivos de cabecera que faltan.
+
+- Encabezados de API de usuario de MPTCP del kernel  de Linux: la biblioteca que contiene los encabezados de API de usuario de MPTCP es la "libmnl-dev" (Netlink Library). Es una biblioteca C que proporciona una interfaz de programación de aplicaciones (API) para la creación y el manejo de mensajes de netlink en el espacio de usuario de Linux, incluye las funciones necesarias para interactuar con el módulo de kernel MPTCP y crear y enviar mensajes de netlink para configurar y controlar la conexión MPTCP. Los encabezados de API de usuario de MPTCP se encuentran en el archivo "mnl/mptcp.h" dentro de la biblioteca libmnl.
+
+**2. Instalación de *mptcpd***
+
+Lo primero que se debe hacer es navegar hasta la carpeta donde se ha descargado el demonio y observar que hay un fichero *bootstrap*, como su nombre indica es un fichero de arranque y es necesario ejecutarlo para que se creen los archivos necesarios para continuar con la instalación del demonio. Así, se ejecuta `./bootstrap`.
+
+*mptcpd* sigue un procedimiento de compilación similar al que siguen los paquetes de software habilitados para*Autotool*, por lo que lo siguiente que hay que hacer es ejecutar el script *configure* en el directorio deseado y hacer `make` después. Antes de esto, es importante observar las diferentes opciones de ejecución que tiene el fichero *configure* mediante `configure --help`. Una de las opciones es `configure --with-kernel=upstream`.
+
+Con todo esto, se ejecuta:
+~~~
+sudo ./configure --with-kernel=upstream
+sudo make
+sudo make check
+sudo make install
+~~~
+Para comenzar *mptcpd* inmediatamente después de la instalación, basta con ejecutar los siguientes comandos:
 ~~~
 systemctl daemon-reload
 systemctl start mptcp.service
 ~~~
-![Captura-de-pantalla-2023-03-15-20122503.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-15%20122503.png)
+Aparecerá algo similar a lo siguiente:
 
-### Configuración de Routing
-Lo siguiente que se debe hacer es configurar el routing entre ambas máquinas. Lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de ambas máquinas (para esta prueba se van a establecer todas en la misma red con IP 10.1.1.0/24). Así, se accede al archivo ***/etc/netplan/01-network.manager-all.yaml*** y se configura la IP de cada interfaz:
-- Para la máquina Ue1: enp0s8 (10.1.1.1), enp0s9 (10.1.1.2) y enp0s10 (10.1.1.3).
-- Para la máquina Ue2: enp0s8 (10.1.1.4), enp0s9 (10.1.1.5) y enp0s10 (10.1.1.6).
+<p align="center">
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20223013.png" width="500" />
+</p>
 
-Después de debe ejecutar `$ sudo netplan apply` para que los cambios se guarden.
+**3. Configuración de *mptcpd.conf***
+Lo siguiente que se debe hacer es modificar el fichero de configuración *mptcpd.conf*. Este fichero se encuentra en */usr/local/etc/mptcpd* de cada máquina, y le dice al demonio cómo debe configurar las interfaces. Para ello, el demonio hace uso de *plugins* que pueden ser construidos para servir algunos propósitos específicos usando la API C. Por defecto, viene con *plugins* que le dirán al gestor de rutas del *kernel* que use todas las IP disponibles como puntos finales para crear subflujos (caso de uso del cliente), pero esto se puede modificar fácilmente para marcar todos los puntos finales como signal en su lugar (caso de uso del servidor). Así, el fichero en el lado del cliente debe quedar como se muestra a continuación:
+~~~
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# Copyright (c) 2018-2019, 2021-2022, Intel Corporation
 
-##### Ue1
-A continuación, se deben crear 3 tablas de enrutamiento; para ello se accede al fichero ***/etc/iproute2/rt_tables*** y se añaden 3 tablas con ID 100, 200 y 300 y nombres table1,table2 y table3 sucesivamente. Una vez creadas, se añaden las IP de origen correspondientes:
-~~~
-ip rule add from 10.1.1.1 table table1
-ip rule add from 10.1.1.2 table table2
-ip rule add from 10.1.1.3 table table3
-~~~
-Lo siguiente que se debe hacer es configurar dichas tablas. Para ello, se ejecutan:
-~~~
-ip route add 10.1.1.0/24 dev enp0s8 scope link table table1
-ip route add default via 10.1.1.4 dev enp0s8 table table1
-ip route add 10.1.1.0/24 dev enp0s9 scope link table table2
-ip route add default via 10.1.1.4 dev enp0s9 table table2
-ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
-ip route add default via 10.1.1.4 dev enp0s10 table table3
-  ~~~
-  
-  ##### Ue2
-Se crean 3 tablas igual que en Ue1 y se añaden las IP de origen correspondientes:
-~~~
-ip rule add from 10.1.1.4 table table1
-ip rule add from 10.1.1.5 table table2
-ip rule add from 10.1.1.6 table table3
-~~~
-Lo siguiente que se debe hacer es configurar dichas tablas. Para ello, se ejecutan:
-~~~
-ip route add 10.1.1.0/24 dev enp0s8 scope link table table1
-ip route add default via 10.1.1.1 dev enp0s8 table table1
-ip route add 10.1.1.0/24 dev enp0s9 scope link table table2
-ip route add default via 10.1.1.1 dev enp0s9 table table2
-ip route add 10.1.1.0/24 dev enp0s10 scope link table table3
-ip route add default via 10.1.1.1 dev enp0s10 table table3
+# ------------------------------------------------------------------
+#                     mptcpd Configuration File
+# ------------------------------------------------------------------
+
+[core]
+# -------------------------
+# Default logging mechanism
+# -------------------------
+#   stderr  - standard unbuffered I/O stream
+#   syslog  - POSIX based system logger
+#   journal - systemd Journal
+#   null    - disable logging
+log=stderr
+
+# ----------------
+# Plugin directory
+# ----------------
+plugin-dir=/usr/local/lib/mptcpd
+
+# -------------------
+# Path manager plugin
+# ---------------------
+# The plugin found with the most favorable (lowest) priority will be
+# used if one is not specified.
+path-manager=addr_adv
+
+# --------------------------
+# Address announcement flags
+# --------------------------
+# A comma separated list containing one or more of the flags:
+#
+#   subflow
+#   signal    (do not use with the "fullmesh" flag)
+#   backup
+#   fullmesh  (do not use with the "signal" flag)
+#
+# Plugins that deal with the in-kernel path manager may use these
+# flags when advertising addresses.
+#
+# See the ip-mptcp(8) man page for details.
+#
+addr-flags=subflow,fullmesh
+
+# --------------------------
+# Address notification flags
+# --------------------------
+# A comma separated list containing one or more of the flags:
+#
+#   existing
+#     Notify plugins of the addresses that exist at mptcpd start
+#
+#   skip_link_local
+#     Ignore (do not notify) [ipv6] link local address updates
+#
+#   skip_loopback
+#     Ignore (do not notify) host (loopback) address updates
+#
+# These flags determine whether mptpcd plugins will be notified when
+# related addresses are updated.
+#
+notify-flags=existing
+
+# --------------------------
+# Plugins to load
+# --------------------------
+# A comma separated list containing one or more plugins to load.
+#
+load-plugins=addr_adv
 ~~~
 
-Con esto, el routing de ambas máquinas está configurado. Para comprobarlo se pueden ejecutar los comandos `$ip rule show`, `$ip route` o  `$ip route show table ID`.
+Como se observa, en la sección de *Plugin directory* se ha indicado el directorio donde se encuentra el *plugin* escogido, éste corresponde con la política que va a llevar el *path manager*, en este caso se escoge el *addr_adv* (se van a advertir las IP disponibles y no hay limitación de número de subflujos por interfaz). Seguidamente, se asigna esta política al *path manager*, y en la sección *Address announcement flags*, se establecen los endpoints (las interfaces) como *subflow* *fullmesh*, lo que indica que cada una intentará crear subflujos con mensajes MP_JOIN con cada una de las interfaces del servidor.
 
-### Configuración de Path-manager
-El path-manager se configura usando la herramienta `ip mptcp`.En concreto, se emplean dos comandos:
-- ip mptcp limits set subflow NR add_addr_accepted NR.
-- ip mptcp endpoint add  'ip'  dev 'iface' 'subflow|signal'.
+En el apartado *Address notification flags* se establecen las *flags* con la opción *existing*, para sean notificadas, y por último, se carga el plugin *addr_adv*.
 
-El primero se utiliza para establecer el número de direcciones IP que se van a admitir por subflujo y el segundo para establecer las direcciones IP de las interfaces que van a funcionar para subflujos.
+Para el lado del servidor, la configuración es la misma salvo por al apartado *Address announcement flags*, el cual se pone a *signal*. Esto hace que las interfaces del servidor no se utilicen para crear nuevos subflujos, sino que anuncien sus IP para que sea el cliente el que los anuncie. Esto se hace así para simular los escenarios del Internet actual, en el que el cliente posiblemente esté detrás de un NAT o *firewall* y sea el servidor el que recibe muchas solicitudes de clientes, pero no sea el que empiece la conexión con ellos.
 
-La máquina Ue1 se va a utilizar como servidor y la Ue2 como cliente.
-
-##### Ue1
-- Se agrega un punto final MPTCP para cada dirección IP en las tres interfaces de red:
+Una vez configurado el archivo *mptcpd.conf*, se deben volver a ejecutar los siguientes comandos con el fin de que los cambios en la configuración se guarden:
 ~~~
-ip mptcp endpoint add 10.1.1.1 dev enp0s8 subflow
-ip mptcp endpoint add 10.1.1.2 dev enp0s9 subflow
-ip mptcp endpoint add 10.1.1.3 dev enp0s10 subflow
+systemctl daemon-reload
+systemctl start mptcp.service
 ~~~
 
-- Se establece un límite de 3 direcciones IP adicionales para cada subflujo MPTCP:
+
+#### Configuración del *path management* a través de *ip mptcp*
+Este *path manager* está implementado en el propio *kernel* de la máquina y la configuración es similar a la que se lleva a cabo con el demonio, pero utilizando línea de comandos, en concreto, el comando `ip mptcp`.
+
+Lo primero que se debe hacer es configurar cada interfaz de cada máquina como un *endpoint*. Al igual que antes, las interfces del cliente serán *subflow fullmesh*, y las del servidor *signal*. Por lo tanto se configura:
+
+##### *Client_kernelOficial*
 ~~~
-ip mptcp limits set subflow 1 add_addr_accepted 3
+sudo ip mptcp endpoint add 10.1.1.1 dev enp0s8 subflow fullmesh
+sudo ip mptcp endpoint add 10.1.1.2 dev enp0s9 subflow fullmesh
+sudo ip mptcp endpoint add 10.1.1.3 dev enp0s10 subflow fullmesh
 ~~~
 
-##### Ue2
-- Se agrega un punto final MPTCP para cada dirección IP en las tres interfaces de red:
+##### *Server_kernelOficial*
 ~~~
-ip mptcp endpoint add 10.1.1.4 dev enp0s8 subflow
-ip mptcp endpoint add 10.1.1.5 dev enp0s9 subflow
-ip mptcp endpoint add 10.1.1.6 dev enp0s10 subflow
-~~~
-
-- Se establece un límite de 3 direcciones IP adicionales para cada subflujo MPTCP:
-~~~
-ip mptcp limits set subflow 1 add_addr_accepted 3
+sudo ip mptcp endpoint add 10.1.1.4 dev enp0s8 signal
+sudo ip mptcp endpoint add 10.1.1.5 dev enp0s9 signal
+sudo ip mptcp endpoint add 10.1.1.6 dev enp0s10 signal
 ~~~
 
-De esta forma, ambas máquinas estarían configuradas para transmitir y recibir datos por todas sus interfaces.
+Después hay que ejecutar un comando más en cada una:
+~~~
+sudo ip mptcp limits set subflow 8 add_addr_accepted 8
+~~~
 
-### Sockets
-Lo último que se debe hacer es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio mptcpd. En este caso, se usa mptcpize y las herramientas iperf3 e ifstat. Ambas se pueden instalar ejecutando:
+Con este último comando se establecen dos cosas:
+- El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que puede haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además esté es el limite máximo).
+- El número máximo de mensajes ADD_ADDR que se van a permitir. También se establece a 8 en ambas, aunque en el caso del servidor no haría falta establecer límite ya que él solo recibirá mensajes MP_JOIN.
+
+
+### Pruebas de verificación
+En este último apartado se lleva a cabo una prueba de rendimiento para verificar que el sistema funciona.
+#### Prueba de rendimiento con *mptcpd*
+Si se han seguido los pasos mostrados en esta guía, en cuanto a creación de escenario en VirtualBox, configuración de *routing*, y configuración del demonio *mptcpd*, sólo faltan un par de pasos para poder comprobar que el sistema funciona.
+
+Uno de los pasos es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio *mptcpd*. En este caso, se usa *mptcpize*. Lo siguiente es instalar las herramientas `iperf3` e `ifstat`. `iperf3` permite hacer pruebas de rendimiento en la red, mientras que `ifstat` muestra las estadísticas de red de cada una de las interfaces de la máquina en tiempo real. Ambas se pueden instalar ejecutando:
 ~~~
 sudo apt install iperf3
 sudo apt install ifstat
 ~~~
-
-### Pruebas
-Para realizar las pruebas se instala en las máquinas (no importa si en Ue1 o Ue2) Wireshark y se pone a capturar. Seguidamente se ejecuta:
+Una vez instaladas, para realizar las pruebas se ejecuta:
 ~~~
-- mptcpize run iperf3 -s & ifstat 
-- mptcpize run iperf3 -c 10.1.1.1 & ifstat 
+mptcpize run iperf3 -s & ifstat (en el servidor)
+mptcpize run iperf3 -c 10.1.1.1 & ifstat (en el cliente)
 ~~~
+La salida que se obtiene es la siguiente:
 
-### Resultados
+<p align="center">
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="500" />
+</p>
+
+#### Prueba de rendimiento con *ip mptcp*
+Si se quiere probar el escenario, pero usando el *in-kernel path manager*, se deben seguir los pasos comentados (creación de escenario en VirtualBox, configuración de *routing*, y gestión de rutas (*path management*) mediante *ip mptcp*).
+
+***IMPORTANTE: si se va a configurar el *in-kernel path manager* en las mismas máquinas donde se configuró el demonio *mptcpd*, es necesario pararlo antes de realizar cualquier tipo de *routing* u otra configuración mediante el comando `sudo systemctl stop mptcp.service`; además de eliminar los *endpoints* que se hayan creado usando `sudo ip mptcp endpoint flush`.***
+
+Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf3` e `ifstat` (en caso de que sea el mismo escenario ya están instalados). Además, si en un prueba anterior se utilizó *mptcpd*, la herramienta `mptcpize` ya está instalada con versión 0.12, en caso contrario, se puede instalar con `sudo apt install mptcpize` en versión 0.9 (no hay diferencia entre versiones).
+
+Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
+
+<p align="center">
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20223013.png" width="500" />
+</p>
