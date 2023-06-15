@@ -1,35 +1,42 @@
-# MPTCP v1
+# Implementación de MPTCP v1 en un escenario virtual con VirtualBox
 
-En este repositorio se muestran los pasos a seguir para la elaboración de un escenario simple con dos máquinas virtuales conectadas entre sí entre las que se ejecuta MPTCP v1. Para realizar esto, se utiliza el código y se siguen los pasos del repositorio oficial del demonio MPTCP ([*mptcpd*](https://github.com/multipath-tcp/mptcpd)). 
+En este repositorio se muestran los pasos a seguir para la elaboración de un escenario simple con dos máquinas virtuales conectadas entre sí entre las que se ejecuta MPTCP v1. Los pasos a seguir se describen a continuación.
+
 ### Instalación de las máquinas virtuales
-Para crear el escenario se ha utilizado la herramienta *Oracle VM VirtualBox*, un software de virtualización para arquitecturas x86/amd64. Es recomendable utilizar la última versión que haya en el momento y que no muestre problemas ya que ofrece mayor compatibilidad con máquinas con kernels nuevos. Los pasos a seguir son:
+Para crear el escenario se ha utilizado la herramienta *Oracle VM VirtualBox*, un software de virtualización para arquitecturas x86/amd64. Es recomendable utilizar la última versión que haya en el momento y que no muestre problemas, ya que ofrece mayor compatibilidad con máquinas con *kernels* nuevos. Se deben seguir las siguientes instrucciones:
 - Ir a la página oficial de Oracle y descargar la versión correspondiente del [software](https://www.virtualbox.org/wiki/Downloads).
-- Ir a la página oficial de Ubuntu y descargar la [imagen](https://releases.ubuntu.com/jammy/) de la versión de Ubuntu que se quiera para las máquinas. La última versión disponible en este momento es la 22.10 pero al no ser LTS (Long Term Support) se escoge la 22.04. (Que una versión sea LTS implica que tendrá soporte y será actualizada durante más tiempo que una versión normal y además suele ser más estable y ha sido probada por más usuarios).
-- Crear dos máquinas virtuales en VirtualBox con dicha imagen (Ue1 y Ue2) con las siguientes características (a modo de guía):
+- Ir a la página oficial de Ubuntu y descargar la [imagen](https://releases.ubuntu.com/jammy/) de la versión de Ubuntu que se quiera para las máquinas. La última versión disponible en este momento es la 22.10, pero al no ser LTS (*Long Term Support*) se escoge la 22.04 (una versión LTS implica que tendrá soporte y será actualizada durante más tiempo que una versión normal, y además suele ser más estable y ha sido probada por más usuarios).
+- Crear dos máquinas virtuales en VirtualBox con dicha imagen (en este caso se les ha dado el nombre *Client_kernelOficial* y *Server_kernelOficial*) con las siguientes características (a modo de guía):
 	- Memoría de 2048 MB y 2 núcleos.
 	- Disco virtual de 20 GB mínimo.
-	- 4 interfaces de red (Adaptador NAT y 3 interfaces conectadas a una misma red interna con nombre *ue1-ue2*).
+	- 4 interfaces de red (Adaptador NAT y 3 interfaces conectadas a una misma red interna, a ésta se le ha dado el nombre de *ue1-ue2_v1_2*).
 
 Una vez se han instalado ambas máquinas  en VirtualBox, se inician y se ponen en marcha siguiendo los pasos de instalación de Ubuntu que van apareciendo en pantalla.
 
-### Instalación del kernel de Linux 6.3
-Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 LTS funcionando. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la wiki del proyecto [*Upstream MPTCP*](https://github.com/multipath-tcp/mptcp_net-next/wiki)  (comunidad que se encarga de desarrollar, mantener y mejorar el protocolo Multipath TCP (MPTCP) (v1/RFC 8684) en el kernel de Linux ascendente), los *upstream Linux kernels* son aquellos que empiezan en la versión 5.6 y posteriores. 
+###  Instalación de las dependencias necesarias para poder compilar el *kernel*
+Antes de intentar compilar e instalar el *kernel* que se quiera en cada una de las máquinas, es necesario instalar una serie de herramientas, las cuales permitirán la posterior compilación del *kernel* sin errores. Estas dependencias se pueden ver en la [*wiki* de *Ubuntu*](https://wiki.ubuntu.com/KernelTeam/GitKernelBuild).
 
-En el apartado ChangeLog se pueden ver los diferentes kernels a partir de los cuales la versión 1 de MPTCP ya viene soportada, y las funcionalidades que añaden cada uno. Lo ideal sería escoger la versión más reciente que hay actualmente del kernel, por lo tanto se va a escoger  el kernel versión 6.3, en concreto, la versión 6.3-rc6 (casi diariamente surgen versiones nuevas por lo que es posible que cuando el usuario esté leyendo este guión, esta versión ya no sea la última).
-Para llevar esto a cabo, basta con descargar los paquetes necesarios e instalarlos. Hay muchos sitios web donde se pueden encontrar pero uno de los más sonados es [este](https://kernel.ubuntu.com/~kernel-ppa/mainline/).
-Los comandos a seguir son los siguientes:
+### Instalación del *kernel* de Linux 6.4-rc5
+Si se han seguido los pasos del apartado anterior, ya se tienen las dos máquinas virtuales con Ubuntu 22.04 LTS funcionando, y con las dependencias necesarias instaladas. Ahora es momento de elegir el kernel sobre el que se va a trabajar. Echando un vistazo a la  web [MultiPath TCP - Linux Kernel implementation](https://multipath-tcp.org/) (esta *wiki* se encarga de la implementación de MPTCP v0 en el *kernel* de Linux), se observa como los *kernels* que ofrecen soporte por defecto a la versión 1 de MPTCP son aquellos que empiezan en la versión v5.6.
+
+El *kernel* más moderno que actualmente ofrece soporte a MPTCP v1 es el 6.4-rc5, por lo que el escenario se va a montar sobre máquinas que lo incluyen (cuando el usuario este leyendo esto, habrán salido *kernels* más nuevos, pero los pasos a seguir que se describen en este repositorio siguen siendo válidos).
+
+Pues bien, en cada una de ellas:
+Si se accede a los [repositorios oficiales de Linux](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/), se puede descargar la carpeta comprimida que contiene el código fuente de dicho *kernel*.  Dentro de ella, se deben seguir los siguientes pasos:
 ~~~
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc6/amd64/linux-headers-6.3.0-060300rc6-generic_6.3.0-060300rc6.202303262231_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc6/amd64/linux-headers-6.3.0-060300rc6_6.3.0-060300rc6.202303262231_all.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc6/amd64/linux-image-unsigned-6.3.0-060300rc6-generic_6.3.0-060300rc6.202303262231_amd64.deb
-wget -c https://kernel.ubuntu.com/~kernel-ppa/mainline/v6.3-rc6/amd64/linux-modules-6.3.0-060300rc6-generic_6.3.0-060300rc6.202303262231_amd64.deb
+sudo make clean
+sudo make menuconfig
+sudo make -j`nproc`
+sudo make -j`nproc` bindeb-pkg
 ~~~
-Una vez descargados los paquetes, se deben instalar y reiniciar la máquina para que los cambios se guarden:
-~~~
-sudo dpkg -i *.deb
-reboot
-~~~
-Al reiniciarla se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r` y como MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello, mediante `sysctl net.mptcp.enabled`.
+
+Cabe destacar que al llevar a cabo el comando `sudo make menuconfig`, es importante comprobar que la sección *Networking support->Networking options->TCP/IP networking->MPTCP protocol (MPTCP)* está marcada con un *.
+
+Una vez se han seguido los pasos, se han generado cuatro paquetes: `linux-headers-*.deb`, `linux-image-*.deb`,  `linux-libc-*.deb` y `linux-image-dbg*.deb`.   El último paquetes está relacionado con temas de *debug*, por lo que no es necesario instalarlo y se puede eliminar, los demás se deben instalar con el comando `sudo dpkg -i *.deb`.
+
+A continuación se puede descargar el archivo *grub-menu.sh* del repositorio de [Jorge Navarro Ortiz](https://github.com/jorgenavarroortiz/multitechnology_testbed_v0/blob/main/vagrant/vagrant/MPTCP0.96_kernel5.4.144_WRR05/grub-menu.sh), y ejecutarlo mediante `./grub-menu-sh`. Este mostrará un menu en el que se visualiza una secuencia de números al lado de cada uno de los *kernels* disponibles en el sistema. La secuencia que pertenece al *kernel* 6.4-rc5, que será de la forma '1>0', se debe cambiar por el valor que tenga GRUB_DEFAULT en el archivo /etc/default/grub (de la forma GRUB_DEFAULT="1>0"). Seguidamente se ejecuta `sudo update-grub` y se reinicia la máquina con `sudo reboot`. Las configuraciones en grub garantizan que cada vez que la máquina virtual se encienda, se selecciona el *kernel* 6.4-rc5 por defecto.
+
+Al reiniciar la máquina (en este caso se muestra el cliente), se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r`, y cómo mediante el comando `sysctl net.mptcp.enabled` se puede comprobar que MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello:
 
 ![Captura-de-pantalla-2023-03-13-192858.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-03-13%20192858.png)
 
