@@ -124,7 +124,7 @@ La principal tarea que va a tener que llevar cualquiera de los *path managers* m
 - Subflow: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos.
 - Signal: la interfaz configurada así permite que su IP sea anunciada mediante mensajes ADD_ADDR. Ella nunca inicia un subflujo (no manda mensajes MP_JOIN).
 - Fullmesh: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos a cada una de las demás interfaces de la otra máquina, formando una toplogía de subflujos todo-a-todo. 
-- Backup: esta opción indica que los subflujos creados utilizándola, serán con mensajes MP_JOIN con el flag backup a 1, por lo que no se utilizarán hasta que sea necesario.
+- Backup: esta opción indica que los subflujos creados utilizándola, serán con mensajes MP_JOIN con el flag backup a 1, por lo que no se utilizarán hasta que sea necesario. Esta opción no puede ir junto con signal.
 
 A continuación se describen los dos tipos de gestor de rutas.
 
@@ -325,7 +325,7 @@ mptcpize run iperf3 -c 10.1.1.1 & ifstat (en el cliente)
 La salida que se obtiene es la siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="800" />
 </p>
 
 #### Prueba de rendimiento con *ip mptcp*
@@ -338,5 +338,16 @@ Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf
 Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20223013.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="800" />
 </p>
+
+Por último, para probar el funcionamiento de backup, se establece la interfaz enp0s9 del cliente como backup (ya sea con *mptcpd* o con *ip mptcp*). Esto se puede hacer al inicio de la configuración, pero si se desea hacer en mitad de la conexión (opción MP_PRIO en MPTCP), se debe utilizar el comando `sudo ip mptcp endpoint change <IP> backup`. Esta opción de *ip mptcp* está disponible en la última versión de *iproute2*, la cual se puede descargar de [aquí](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) e instalar.
+
+Se observa el siguiente comportamiento:
+
+<p align="center">
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen3.png" width="600" />
+</p>
+
+La interfaz enp0s9 no se utiliza hasta que enp0s8 y enp0s10 se caen, en dicho momento se reactiva.
+
