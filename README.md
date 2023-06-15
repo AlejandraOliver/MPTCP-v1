@@ -341,7 +341,10 @@ Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run ipe
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="800" />
 </p>
 
-Por último, para probar el funcionamiento de backup, se establece la interfaz enp0s9 del cliente como backup (ya sea con *mptcpd* o con *ip mptcp*). Esto se puede hacer al inicio de la configuración, pero si se desea hacer en mitad de la conexión (opción MP_PRIO en MPTCP), se debe utilizar el comando `sudo ip mptcp endpoint change <IP> backup`. Esta opción de *ip mptcp* está disponible en la última versión de *iproute2*, la cual se puede descargar de [aquí](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) e instalar.
+Como se ha podido observar, se utilizan todas las interfaces para la creación de subflujos con un *throughput* de 88 Mb/s por interfaz. Esto quiere decir que.
+
+
+Por último, para probar el funcionamiento de backup, se establece la interfaz enp0s9 del cliente como backup (ya sea con *mptcpd* o con *ip mptcp*). Esto se puede hacer al inicio de la configuración, pero si se desea hacer en mitad de la conexión (opción MP_PRIO en MPTCP), se debe utilizar el comando `sudo ip mptcp endpoint change <IP> backup`. Esta opción de *ip mptcp* está disponible en la última versión de *iproute2*, la cual se puede descargar de [aquí](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) e instalar. Se destaca que esta versión de *iproute* instala una nueva versión de `ifstat`, si se quiere volver a la anterior, se puede encontrar [aquí](https://packages.debian.org/buster/ifstat).
 
 Se observa el siguiente comportamiento:
 
