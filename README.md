@@ -38,7 +38,7 @@ A continuación se puede descargar el archivo *grub-menu.sh* del repositorio de 
 
 Al reiniciar la máquina (en este caso se muestra el cliente), se puede comprobar como ahora se tiene instalado y funcionando dicho kernel con el comando `uname -r`, y cómo mediante el comando `sysctl net.mptcp.enabled` se puede comprobar que MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello:
 
-![Captura de pantalla 2023-06-15 200233.png](ImagenesRepositorio/Captura de pantalla 2023-06-15 200233.png)
+![Captura de pantalla 2023-06-15 200233.png]([ImagenesRepositorio/Captura de pantalla 2023-06-15 200233.png](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20200233.png))
 
 ### Instalación del Demonio mptcpd y sus Dependencias
 
