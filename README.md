@@ -113,6 +113,7 @@ Con todo ello se puede comprobar que el *routing* se ha establecido de forma cor
 :-------------------------:|:-------------------------:
 ![1](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205158.png)  |  ![2](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205332.png)
 
+Se observa como la interfaz con mayor prioridad es la enp0s10 en ambas máquinas, esto implica que el cliente la utilizará para conectarse inicialmente al servidor. En el caso del servidor, como el cliente se conectará a la IP 10.1.1.4 explícitamente, no se utilizará ésta para la conexión inicial.
 
 ### Configuración del *scheduling* en las máquinas
 Los *kernels* oficiales de Linux a partir de v5.6 ofrecen soporte al protocolo, pero no todas las funcionalidades de éste. A diferencia de MPTCP v0, el cual poseía varios tipos de *schedulers*, el protocolo en su versión 1 implementado en estos *kernels* solo posee un tipo de *scheduler*, el *scheduler* por defecto. Éste envía los datos por todos los subflujos disponibles, buscando el mejor rendimiento. Por ello, no hay nada que configurar en este ámbito.
@@ -270,11 +271,11 @@ load-plugins=addr_adv
 
 Como se observa, en la sección de *Plugin directory* se ha indicado el directorio donde se encuentra el *plugin* escogido, éste corresponde con la política que va a llevar el *path manager*, en este caso se escoge el *addr_adv* (se van a advertir las IP disponibles y no hay limitación de número de subflujos por interfaz). Seguidamente, se asigna esta política al *path manager*, y en la sección *Address announcement flags*, se establecen los endpoints (las interfaces) como *subflow* *fullmesh*, lo que indica que cada una intentará crear subflujos con mensajes MP_JOIN con cada una de las interfaces del servidor.
 
-En el apartado *Address notification flags* se establecen las *flags* con la opción *existing*, para sean notificadas, y por último, se carga el plugin *addr_adv*.
+En el apartado *Address notification flags* se establecen las *flags* con la opción *existing*, para que sean notificadas, y por último, se carga el plugin *addr_adv*.
 
-Para el lado del servidor, la configuración es la misma salvo por al apartado *Address announcement flags*, el cual se pone a *signal*. Esto hace que las interfaces del servidor no se utilicen para crear nuevos subflujos, sino que anuncien sus IP para que sea el cliente el que los anuncie. Esto se hace así para simular los escenarios del Internet actual, en el que el cliente posiblemente esté detrás de un NAT o *firewall* y sea el servidor el que recibe muchas solicitudes de clientes, pero no sea el que empiece la conexión con ellos.
+Para el lado del servidor, la configuración es la misma salvo por al apartado *Address announcement flags*, el cual se pone a *signal*. Esto hace que las interfaces del servidor no se utilicen para crear nuevos subflujos, sino que anuncien sus IP para que sea el cliente el que los inicie. Esto se hace así para simular los escenarios del Internet actual, en los que el cliente posiblemente esté detrás de un NAT o *firewall*, y sea el servidor el que recibe muchas solicitudes de clientes, pero no sea el que empiece la conexión con ellos.
 
-Una vez configurado el archivo *mptcpd.conf*, se deben volver a ejecutar los siguientes comandos con el fin de que los cambios en la configuración se guarden:
+Una vez configurado el archivo *mptcpd.conf* en ambos extremos, se deben volver a ejecutar los siguientes comandos con el fin de que los cambios en la configuración se guarden:
 ~~~
 systemctl daemon-reload
 systemctl start mptcp.service
@@ -306,7 +307,7 @@ sudo ip mptcp limits set subflow 8 add_addr_accepted 8
 ~~~
 
 Con este último comando se establecen dos cosas:
-- El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que puede haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además esté es el limite máximo).
+- El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que pueda haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además esté es el límite máximo).
 - El número máximo de mensajes ADD_ADDR que se van a permitir. También se establece a 8 en ambas, aunque en el caso del servidor no haría falta establecer límite ya que él solo recibirá mensajes MP_JOIN.
 
 
@@ -315,7 +316,7 @@ En este último apartado se lleva a cabo una prueba de rendimiento para verifica
 #### Prueba de rendimiento con *mptcpd*
 Si se han seguido los pasos mostrados en esta guía, en cuanto a creación de escenario en VirtualBox, configuración de *routing*, y configuración del demonio *mptcpd*, sólo faltan un par de pasos para poder comprobar que el sistema funciona.
 
-Uno de los pasos es obligar a las aplicaciones a que creen sockets MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);) o el comando `mptcpize` incluido con el demonio *mptcpd*. En este caso, se usa *mptcpize*. Lo siguiente es instalar las herramientas `iperf3` e `ifstat`. `iperf3` permite hacer pruebas de rendimiento en la red, mientras que `ifstat` muestra las estadísticas de red de cada una de las interfaces de la máquina en tiempo real. Ambas se pueden instalar ejecutando:
+Uno de los pasos es obligar a las aplicaciones a que creen *sockets* MPTCP en lugar de TCP. Para ello, se puede usar IPPROTO_MPTCP como prototipo: (socket(AF_INET, SOCK_STREAM, IPPROTO_MPTCP);), o el comando `mptcpize` incluido con el demonio *mptcpd*. En este caso, se usa *mptcpize* para obligar a que con `iperf3` se utilicen *sockets* MPTCP. Lo siguiente es instalar las herramientas `iperf3` e `ifstat`. `iperf3` permite hacer pruebas de rendimiento en la red, mientras que `ifstat` muestra las estadísticas de red de cada una de las interfaces de la máquina en tiempo real. Ambas se pueden instalar ejecutando:
 ~~~
 sudo apt install iperf3
 sudo apt install ifstat
@@ -325,7 +326,7 @@ Una vez instaladas, para realizar las pruebas se ejecuta:
 mptcpize run iperf3 -s & ifstat (en el servidor)
 mptcpize run iperf3 -c 10.1.1.1 & ifstat (en el cliente)
 ~~~
-La salida que se obtiene muestra un *throughput* que no se puede analizar mucho debido a que: cada interfaz tiene una valocidad de 1000Mb/s, pero no se llega nunca a este rendimiento debido a la capacidad del host (portátil) que se está usando. Para poder ver bien, y analizar la salida obtenida, se limita el *throughput* de todas las interfaces a 100Mb/s. Para hacer esto se hace uso de la herramienta `tc`, ejecutando los siguientes comandos en ambas máquinas:
+La salida que se obtiene muestra un *throughput* que no se puede analizar debido a que: cada interfaz tiene una velocidad de 1000Mb/s, pero no se llega nunca a este rendimiento debido a la capacidad del host (portátil) que se está usando. Para poder analizar mejor la salida obtenida, se limita el *throughput*/velocidad de todas las interfaces a 100Mb/s. Para hacer esto se hace uso de la herramienta `tc`, ejecutando los siguientes comandos en ambas máquinas:
 ~~~
 #Elimina cualquier configuración que hubiera antes
 sudo tc qdisc del dev enp0s8 root 
@@ -355,18 +356,18 @@ Una vez limitadas las interfaces, se obtiene lo siguiente:
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="800" />
 </p>
 
-Como se puede ver, tanto en cliente como servidor tienen un rendimiento de unos 11000 KB/s-12000 KB/s, lo que equivale a unos 88 MB/s- 96 Mb/s. No se llega a 100 Mb/s debido a las limitaciones del propio portátil; además, en la imagen el servidor da más de 100 Mb/s ya que tarda un poco más en estabilizarse, pero después de un periodo corto empieza a dar esos 88 MB/s- 96 Mb/s. Además, se puede observar como se mandan los mismos datos por todos los subflujos creados, esto es así ya que si se mandaran distintos datos por cada uno, el *throughput* que se vería en la interfaz sería de 100 Mb/s *3, ya que cada subflujo tendría la velocidad que se le ha puesto a la interfaz. Cómo los datos se repiten, la interfaz descarta todos menos los de un subflujo. Por último, se destaca que se crean subflujos con cada par de IP formando una toplogía fullmesh, esto se puede comprobar  con el comando `ip mptcp monitor`.
+Como se puede ver, tanto cliente como servidor tienen un rendimiento de unos 11000 KB/s-12000 KB/s, lo que equivale a unos 88 MB/s- 96 Mb/s. No se llega a 100 Mb/s debido a las limitaciones del propio portátil; además, en la imagen el servidor da más de 100 Mb/s ya que tarda un poco más en estabilizarse, pero después de un periodo corto empieza a dar esos 88 MB/s- 96 Mb/s. Por otro lado, se puede observar como se mandan los mismos datos por todos los subflujos creados, esto es así ya que si se mandaran distintos datos por cada uno, el *throughput* que se vería en la interfaz sería de 100 Mb/s *3, ya que cada subflujo tendría la velocidad que se le ha puesto a la interfaz. Cómo los datos se repiten, la interfaz descarta todos menos los de uno de los subflujos. Por último, se destaca que se crean subflujos con cada par de IP formando una toplogía fullmesh, esto se puede comprobar con el comando `ip mptcp monitor`.
 
 <p align="center">
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen5.png" width="800" />
 </p>
 
 #### Prueba de rendimiento con *ip mptcp*
-Si se quiere probar el escenario, pero usando el *in-kernel path manager*, se deben seguir los pasos comentados (creación de escenario en VirtualBox, configuración de *routing*, y gestión de rutas (*path management*) mediante *ip mptcp*).
+Si se quiere probar el escenario, pero usando el *in-kernel path manager*, se deben seguir los pasos comentados: creación de escenario en VirtualBox, configuración de *routing*, y gestión de rutas (*path management*) mediante *ip mptcp*.
 
 ***IMPORTANTE: si se va a configurar el *in-kernel path manager* en las mismas máquinas donde se configuró el demonio *mptcpd*, es necesario pararlo antes de realizar cualquier tipo de *routing* u otra configuración mediante el comando `sudo systemctl stop mptcp.service`; además de eliminar los *endpoints* que se hayan creado usando `sudo ip mptcp endpoint flush`.***
 
-Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf3` e `ifstat` (en caso de que sea el mismo escenario ya están instalados). Además, si en un prueba anterior se utilizó *mptcpd*, la herramienta `mptcpize` ya está instalada con versión 0.12, en caso contrario, se puede instalar con `sudo apt install mptcpize` en versión 0.9 (no hay diferencia entre versiones).
+Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf3` e `ifstat` (en caso de que sea el mismo escenario ya están instalados). Además, si en una prueba anterior se utilizó *mptcpd*, la herramienta `mptcpize` ya está instalada con versión 0.12, en caso contrario, se puede instalar con `sudo apt install mptcpize` en versión 0.9 (no hay diferencia entre versiones).
 
 Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
 
@@ -374,7 +375,7 @@ Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run ipe
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="500" />
 </p>
 
-Como se ha podido observar, el comportamiento es el mismo independientemente del tipo de *path manager* empleado, siempre y cuando la confoguración sea la misma.
+Como se ha podido observar, el comportamiento es el mismo independientemente del tipo de *path manager* empleado, siempre y cuando la configuración sea la misma.
 
 
 Por último, para probar el funcionamiento de backup, se establece la interfaz enp0s9 del cliente como backup (ya sea con *mptcpd* o con *ip mptcp*). Esto se puede hacer al inicio de la configuración, pero si se desea hacer en mitad de la conexión (opción MP_PRIO en MPTCP), se debe utilizar el comando `sudo ip mptcp endpoint change <IP> backup`. Esta opción de *ip mptcp* está disponible en la última versión de *iproute2*, la cual se puede descargar de [aquí](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) e instalar. Se destaca que esta versión de *iproute* instala una nueva versión de `ifstat`, si se quiere volver a la anterior, se puede encontrar [aquí](https://packages.debian.org/buster/ifstat).
