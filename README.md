@@ -40,13 +40,13 @@ A continuación, se puede descargar el archivo *grub-menu.sh* del repositorio de
 Al reiniciar la máquina (en este caso se muestra el cliente), se puede comprobar como ahora se tiene instalado y funcionando dicho *kernel*, y cómo mediante el comando `sysctl net.mptcp.enabled` se puede comprobar que MPTCP viene soportado por defecto sin tener que instalar ningún parche para ello:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20200233.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/comprobacion_kernel.png" width="500" />
 </p>
 
 ### Configuración del *routing* en las máquinas
 Lo siguiente que se debe hacer es configurar el *routing* en ambas máquinas. El escenario que se pretende seguir es el siguiente:
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20202932.png" width="400" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/escenario.png" width="400" />
 </p>
 
 Como se observa, cada máquina tiene 3 interfaces conectadas a una misma red interna *ue_ue_v1_2* a través de las cuales se implementará MPTCP, además de una cuarta interfaz a NAT a la que se le asigna IP mediante DHCP, por lo que de ésta última no hay que preocuparse. Pues bien, lo primero que hay que hacer es darle dirección IP a cada una de las interfaces de la red interna, para ello se accede al archivo */etc/netplan/01-network.manager-all.yaml* y se configura:
@@ -111,7 +111,7 @@ Con todo ello se puede comprobar que el *routing* se ha establecido de forma cor
 
 *Routing* en el cliente            |  *Routing* en el servidor
 :-------------------------:|:-------------------------:
-![1](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205158.png)  |  ![2](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20205332.png)
+![1](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/routing_cliente.png)  |  ![2](https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/routing_servidor.png)
 
 Se observa como la interfaz con mayor prioridad es la enp0s10 en ambas máquinas, esto implica que el cliente la utilizará para conectarse inicialmente al servidor. En el caso del servidor, como el cliente se conectará a la IP 10.1.1.4 explícitamente, no se utilizará ésta para la conexión inicial.
 
@@ -188,7 +188,7 @@ systemctl start mptcp.service
 Aparecerá algo similar a lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Captura%20de%20pantalla%202023-06-15%20223013.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/mptcpd.png" width="500" />
 </p>
 
 **3. Configuración de *mptcpd.conf***
@@ -353,13 +353,13 @@ sudo tc class add dev enp0s10 parent 1: classid 0:1 htb rate 100mbit
 Una vez limitadas las interfaces, se obtiene lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="800" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/iperf3_mptcpd.png" width="800" />
 </p>
 
 Como se puede ver, tanto cliente como servidor tienen un rendimiento de unos 11000 KB/s-12000 KB/s, lo que equivale a unos 88 MB/s- 96 Mb/s. No se llega a 100 Mb/s debido a las limitaciones del propio portátil; además, en la imagen el servidor da más de 100 Mb/s ya que tarda un poco más en estabilizarse, pero después de un periodo corto empieza a dar esos 88 MB/s- 96 Mb/s. Por otro lado, se puede observar como se mandan los mismos datos por todos los subflujos creados, esto es así ya que si se mandaran distintos datos por cada uno, el *throughput* que se vería en la interfaz sería de 100 Mb/s *3, ya que cada subflujo tendría la velocidad que se le ha puesto a la interfaz. Cómo los datos se repiten, la interfaz descarta todos menos los de uno de los subflujos. Por último, se destaca que se crean subflujos con cada par de IP formando una toplogía fullmesh, esto se puede comprobar con el comando `ip mptcp monitor`.
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen5.png" width="800" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/ip_monitor.png" width="800" />
 </p>
 
 #### Prueba de rendimiento con *ip mptcp*
@@ -372,7 +372,7 @@ Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf
 Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/iperf3_ip_mptcp.png" width="500" />
 </p>
 
 Como se ha podido observar, el comportamiento es el mismo independientemente del tipo de *path manager* empleado, siempre y cuando la configuración sea la misma.
@@ -383,7 +383,7 @@ Por último, para probar el funcionamiento de backup, se establece la interfaz e
 Se observa el siguiente comportamiento:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen3.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/prueba_backup.png" width="500" />
 </p>
 
 La interfaz enp0s9 no se utiliza hasta que enp0s8 y enp0s10 se caen, en dicho momento se reactiva.
