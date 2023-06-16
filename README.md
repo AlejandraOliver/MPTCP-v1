@@ -308,7 +308,7 @@ sudo ip mptcp limits set subflow 8 add_addr_accepted 0 (en el servidor)
 ~~~
 
 Con este último comando se establecen dos cosas:
-- El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que pueda haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además esté es el límite máximo).
+- El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que pueda haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además éste es el límite máximo).
 - El número máximo de mensajes ADD_ADDR que se van a permitir. Se establece a 8 en el cliente, en el servidor no haría falta establecer límite debido a que él solo recibirá mensajes MP_JOIN.
 
 Para comprobar la configuración se pueden ejecutar `sudo ip mptcp endpoint` y `sudo ip mptcp limits show`.
