@@ -280,7 +280,7 @@ Una vez configurado el archivo *mptcpd.conf* en ambos extremos, se deben volver 
 systemctl daemon-reload
 systemctl start mptcp.service
 ~~~
-
+Para comprobar la configuración se pueden ejecutar `sudo ip mptcp endpoint` y `sudo ip mptcp limits show`.
 
 #### Configuración del *path management* a través de *ip mptcp*
 Este *path manager* está implementado en el propio *kernel* de la máquina y la configuración es similar a la que se lleva a cabo con el demonio, pero utilizando línea de comandos, en concreto, el comando `ip mptcp`.
@@ -310,6 +310,7 @@ Con este último comando se establecen dos cosas:
 - El número máximo de subflujos adicionales que se van a poder crear en la conexión MPTCP entre las dos máquinas (sin contar con el que se crea para hacer la conexión). Este valor se establece a 8, para que pueda haber subflujos entre las 3 interfaces de una máquina y las 3 de la otra (además esté es el límite máximo).
 - El número máximo de mensajes ADD_ADDR que se van a permitir. También se establece a 8 en ambas, aunque en el caso del servidor no haría falta establecer límite ya que él solo recibirá mensajes MP_JOIN.
 
+Para comprobar la configuración se pueden ejecutar `sudo ip mptcp endpoint` y `sudo ip mptcp limits show`.
 
 ### Pruebas de verificación
 En este último apartado se lleva a cabo una prueba de rendimiento para verificar que el sistema funciona.
@@ -359,7 +360,7 @@ Una vez limitadas las interfaces, se obtiene lo siguiente:
 Como se puede ver, tanto cliente como servidor tienen un rendimiento de unos 11000 KB/s-12000 KB/s, lo que equivale a unos 88 MB/s- 96 Mb/s. No se llega a 100 Mb/s debido a las limitaciones del propio portátil; además, en la imagen el servidor da más de 100 Mb/s ya que tarda un poco más en estabilizarse, pero después de un periodo corto empieza a dar esos 88 MB/s- 96 Mb/s. Por otro lado, se puede observar como se mandan los mismos datos por todos los subflujos creados, esto es así ya que si se mandaran distintos datos por cada uno, el *throughput* que se vería en la interfaz sería de 100 Mb/s *3, ya que cada subflujo tendría la velocidad que se le ha puesto a la interfaz. Cómo los datos se repiten, la interfaz descarta todos menos los de uno de los subflujos. Por último, se destaca que se crean subflujos con cada par de IP formando una toplogía fullmesh, esto se puede comprobar con el comando `ip mptcp monitor`.
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/ip_monitor.png" width="800" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/ip_monitor.png" width="700" />
 </p>
 
 #### Prueba de rendimiento con *ip mptcp*
@@ -372,7 +373,7 @@ Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf
 Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/iperf3_ip_mptcp.png" width="500" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/iperf3_ip_mptcp.png" width="800" />
 </p>
 
 Como se ha podido observar, el comportamiento es el mismo independientemente del tipo de *path manager* empleado, siempre y cuando la configuración sea la misma.
