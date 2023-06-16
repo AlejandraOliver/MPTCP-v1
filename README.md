@@ -126,7 +126,7 @@ A la hora de implementar la gestión de rutas, se tienen dos tipos de *path mana
 La principal tarea que va a tener que llevar cualquiera de los *path managers* mencionados, es establecer de qué tipo van a ser las interfaces de cada máquina. Éstas se van a poder configurar como *endpoints* de 4 tipos:
 - Subflow: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos.
 - Signal: una interfaz configurada así permite que su IP sea anunciada mediante mensajes ADD_ADDR. Ella nunca inicia un subflujo (no manda mensajes MP_JOIN).
-- Fullmesh: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos a cada una de las demás interfaces de la otra máquina, formando una toplogía de subflujos todas-a-todas. 
+- Fullmesh: las interfaces configuradas de esta forma enviarán mensajes MP_JOIN para iniciar nuevos subflujos a cada una de las demás interfaces de la otra máquina, formando una topología de subflujos todas-a-todas. 
 - Backup: esta opción indica que los subflujos creados utilizando dicha interfaz, se harán con mensajes MP_JOIN con el *flag* backup a 1, por lo que no se utilizarán hasta que sea necesario. Esta opción no puede ir junto con signal.
 
 A continuación se describe la configuración de ambos tipos de gestor de rutas.
