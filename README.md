@@ -82,7 +82,7 @@ sudo ip route del 169.254.0.0/16
 El primero de ellos establece la ruta por defecto para el proceso de selección del tráfico normal de Internet, y el segundo elimina un enlace local que se crea por defecto y que no es necesario, lo único que hace es entorpecer el *routing* creado.
 
 #### *Server_kernelOficial*
-Siguiendo los mismo pasos que para el cliente, pero con sus IP correspondientes, se lleva a cabo lo siguiente:
+Siguiendo los mismos pasos que para el cliente, pero con sus IP correspondientes, se lleva a cabo lo siguiente:
 
 Se crean las tablas:
 ~~~
