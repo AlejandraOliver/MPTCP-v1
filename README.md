@@ -146,7 +146,7 @@ Antes de poder instalarlo es necesario instalar en nuestra/s máquinas una serie
 
 Todas las dependencias mencionadas se pueden instalar siguiendo los enlaces mostrados a través de archivos comprimidos o simplemente utilizando el comando `sudo apt install <nombre de la dependencia>`. Este comando instalará la versión más reciente de dicho paquete que hay disponible para su sistema.
 
-- Biblioteca Argp. Para instalar esta biblioteca se han seguido los pasos que ofrece [*Alexander Reguiero*](https://github.com/alexreg/libargp) en su plataforma de github pero reemplazando algunos archivos por los que ofrece [*Érico Nogueira Rolim*](https://github.com/ericonr/argp-standalone) en su repositorio. Esto se ha hecho así ya que éste segundo ofrece soluciones a los problemas de compilación de los archivos del primer repositorio.
+- Biblioteca Argp. Para instalar esta biblioteca se han seguido los pasos que ofrece [*Alexander Reguiero*](https://github.com/alexreg/libargp) en su plataforma de github, pero reemplazando algunos archivos por los que ofrece [*Érico Nogueira Rolim*](https://github.com/ericonr/argp-standalone) en su repositorio. Esto se ha hecho así ya que éste segundo ofrece soluciones a los problemas de compilación de los archivos del primer repositorio. El paquete final se puede descargar de este repositorio.
 
 - [Biblioteca de Linux integrada >= v0.30](https://git.kernel.org/pub/scm/libs/ell/ell.git/). Este paquete se puede instalar con los siguiente comandos:
 ~~~
@@ -322,10 +322,40 @@ Una vez instaladas, para realizar las pruebas se ejecuta:
 mptcpize run iperf3 -s & ifstat (en el servidor)
 mptcpize run iperf3 -c 10.1.1.1 & ifstat (en el cliente)
 ~~~
-La salida que se obtiene es la siguiente:
+La salida que se obtiene muestra un *throughput* que no se puede analizar mucho debido a que: cada interfaz tiene una valocidad de 1000Mb/s, pero no se llega nunca a este rendimiento debido a la capacidad del host (portátil) que se está usando. Para poder ver bien, y analizar la salida obtenida, se limita el *throughput* de todas las interfaces a 100Mb/s. Para hacer esto se hace uso de la herramienta `tc`, ejecutando los siguientes comandos en ambas máquinas:
+~~~
+#Elimina cualquier configuración que hubiera antes
+sudo tc qdisc del dev enp0s8 root 
+#Base para realizar la configuración
+sudo tc qdisc add dev enp0s8 root handle 1: htb default 1
+#Adición de limitación de BW
+sudo tc class add dev enp0s8 parent 1: classid 0:1 htb rate 100mbit
+
+#Elimina cualquier configuración que hubiera antes
+sudo tc qdisc del dev enp0s10 root 
+#Base para realizar la configuración
+sudo tc qdisc add dev enp0s10 root handle 1: htb default 1
+#Adición de limitación de BW
+sudo tc class add dev enp0s10 parent 1: classid 0:1 htb rate 100mbit
+
+#Elimina cualquier configuración que hubiera antes
+sudo tc qdisc del dev enp0s10 root 
+#Base para realizar la configuración
+sudo tc qdisc add dev enp0s10 root handle 1: htb default 1
+#Adición de limitación de BW
+sudo tc class add dev enp0s10 parent 1: classid 0:1 htb rate 100mbit
+~~~
+
+Una vez limitadas las interfaces, se obtiene lo siguiente:
 
 <p align="center">
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen1.png" width="800" />
+</p>
+
+Como se puede ver, tanto en cliente como servidor tienen un rendimiento de unos 11000 KB/s-12000 KB/s, lo que equivale a unos 88 MB/s- 96 Mb/s. No se llega a 100 Mb/s debido a las limitaciones del propio portátil; además, en la imagen el servidor da más de 100 Mb/s ya que tarda un poco más en estabilizarse, pero después de un periodo corto empieza a dar esos 88 MB/s- 96 Mb/s. Además, se puede observar como se mandan los mismos datos por todos los subflujos creados, esto es así ya que si se mandaran distintos datos por cada uno, el *throughput* que se vería en la interfaz sería de 100 Mb/s *3, ya que cada subflujo tendría la velocidad que se le ha puesto a la interfaz. Cómo los datos se repiten, la interfaz descarta todos menos los de un subflujo. Por último, se destaca que se crean subflujos con cada par de IP formando una toplogía fullmesh, esto se puede comprobar  con el comando `ip mptcp monitor`.
+
+<p align="center">
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen5.png" width="800" />
 </p>
 
 #### Prueba de rendimiento con *ip mptcp*
@@ -338,10 +368,10 @@ Una vez dicho esto, se siguen los pasos de *ip mptcp* y se instalan tanto `iperf
 Ejecutando `mptcpize run iperf3 -s & ifstat` en el servidor, y `mptcpize run iperf3 -c 10.1.1.1 & ifstat` en el cliente, se obtiene lo siguiente:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="800" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/Imagen2.png" width="500" />
 </p>
 
-Como se ha podido observar, se utilizan todas las interfaces para la creación de subflujos con un *throughput* de 88 Mb/s por interfaz. Esto quiere decir que.
+Como se ha podido observar, el comportamiento es el mismo independientemente del tipo de *path manager* empleado, siempre y cuando la confoguración sea la misma.
 
 
 Por último, para probar el funcionamiento de backup, se establece la interfaz enp0s9 del cliente como backup (ya sea con *mptcpd* o con *ip mptcp*). Esto se puede hacer al inicio de la configuración, pero si se desea hacer en mitad de la conexión (opción MP_PRIO en MPTCP), se debe utilizar el comando `sudo ip mptcp endpoint change <IP> backup`. Esta opción de *ip mptcp* está disponible en la última versión de *iproute2*, la cual se puede descargar de [aquí](https://mirrors.edge.kernel.org/pub/linux/utils/net/iproute2/) e instalar. Se destaca que esta versión de *iproute* instala una nueva versión de `ifstat`, si se quiere volver a la anterior, se puede encontrar [aquí](https://packages.debian.org/buster/ifstat).
@@ -349,7 +379,7 @@ Por último, para probar el funcionamiento de backup, se establece la interfaz e
 Se observa el siguiente comportamiento:
 
 <p align="center">
-  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen3.png" width="600" />
+  <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/imagen3.png" width="500" />
 </p>
 
 La interfaz enp0s9 no se utiliza hasta que enp0s8 y enp0s10 se caen, en dicho momento se reactiva.
