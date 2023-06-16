@@ -31,7 +31,7 @@ sudo make -j`nproc`
 sudo make -j`nproc` bindeb-pkg
 ~~~
 
-Cabe destacar que al llevar a cabo el comando `sudo make menuconfig`, es importante comprobar que la sección *Networking support->Networking options->TCP/IP networking->MPTCP protocol (MPTCP)* está marcada con un *.
+Cabe destacar que  antes de ejecutar `sudo make -j`nproc``, se debe modificar el archivo *.config* y borrar la comprobación de certificados debian que se encuentra en las secciones *CONFIG_SYSTEM_TRUSTED_KEYS* y *CONFIG_SYSTEM_REVOCATION_KEYS*. Estos certificados no son necesarios y si no se borran la compilación da error. Además, al llevar a cabo el comando `sudo make menuconfig`, es importante comprobar que la sección *Networking support->Networking options->TCP/IP networking->MPTCP protocol (MPTCP)* está marcada con un *.
 
 Una vez se han seguido los pasos, se han generado cuatro paquetes: `linux-headers-*.deb`, `linux-image-*.deb`,  `linux-libc-*.deb` y `linux-image-dbg*.deb`.   El último paquete está relacionado con temas de *debug*, por lo que no es necesario instalarlo y se puede eliminar, los demás se deben instalar con el comando `sudo dpkg -i *.deb`.
 
