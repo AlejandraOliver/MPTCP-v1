@@ -352,7 +352,7 @@ sudo tc qdisc add dev enp0s10 root handle 1: htb default 1
 sudo tc class add dev enp0s10 parent 1: classid 0:1 htb rate 100mbit
 ~~~
 
-Una vez limitadas las interfaces, se obtiene lo siguiente:
+Además, como el demonio establece como *endpoints* todas las interfaces de la máquina, también se configura enp0s3, por lo que antes de hacer pruebas hay que echarla abajo. Una vez hecho esto, se obtiene lo siguiente:
 
 <p align="center">
   <img src="https://github.com/AlejandraOliver/MPTCP-v1/blob/main/ImagenesRepositorio/iperf3_mptcpd.png" width="800" />
